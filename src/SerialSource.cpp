@@ -3,7 +3,7 @@
 SerialSource::SerialSource(QObject *parent) :
   QObject(parent),
   _serialPort(nullptr),
-  _txQueue(std::make_unique< QQueue<QByteArray > >()),
+  _txQueue(std::make_unique< std::queue<Bytes > >()),
   _isTransmitting(false),
   _retry(new QTimer(this))
 {
@@ -43,8 +43,10 @@ void SerialSource::rts(bool isEnabled){
   _serialPort->setRequestToSend(isEnabled);
 }
 
-void SerialSource::txData(const QByteArray &data){
-  _txQueue->enqueue(data);
+void SerialSource::txData(const Bytes &data){
+  auto txPacket = std::vector<uint8_t>();
+  txPacket.insert(txPacket.begin(), data.begin(), data.end());
+  _txQueue->push(txPacket);
   sendIfTxComplete();
 }
 
@@ -118,8 +120,8 @@ void SerialSource::errorOccured(QSerialPort::SerialPortError){
  */
 void SerialSource::clearQueues(){
   if( _serialPort->isOpen()){
-    while(!_txQueue->isEmpty()){
-      (void)_txQueue->dequeue();
+    while(!_txQueue->empty()){
+      (void)_txQueue->pop();
     }
     while(_serialPort->bytesAvailable()){
       _serialPort->readAll();
@@ -129,8 +131,10 @@ void SerialSource::clearQueues(){
 
 void SerialSource::sendIfTxComplete(){
   if( (_txQueue->size() > 0 ) && (_serialPort->bytesToWrite() == 0 )){
-    auto data = _txQueue->dequeue();
-    _serialPort->write(data);
+    auto data = _txQueue->front();
+    _txQueue->pop();
+    auto txData = QByteArray(reinterpret_cast<const char *>(data.data()), data.size());
+    _serialPort->write(txData);
   }
 }
 

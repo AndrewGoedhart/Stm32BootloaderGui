@@ -2,6 +2,8 @@
 #define SERIAL_SOURCE
 
 #include <memory>
+#include <vector>
+#include <queue>
 
 #include <QQueue>
 #include <QTimer>
@@ -10,6 +12,7 @@
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
 
+using Bytes = std::vector<uint8_t>;
 
 class SerialSource : public QObject
 {
@@ -31,7 +34,7 @@ class SerialSource : public QObject
     /**
      *
      */
-    void txData(const QByteArray &data);
+    void txData(const Bytes &data);
 
     /**
      * Open the given serial port with the given baud rate
@@ -101,11 +104,8 @@ class SerialSource : public QObject
     void sendIfTxComplete();
 
 
-
-
-
     QSerialPort *_serialPort;
-    std::unique_ptr<QQueue<QByteArray>> _txQueue;
+    std::unique_ptr<std::queue<Bytes>> _txQueue;
     bool _isTransmitting;
     QTimer *_retry;
 };

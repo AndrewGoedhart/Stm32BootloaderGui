@@ -27,7 +27,7 @@ class CommandSequence :public QObject {
 public slots:
       void CommandCompletedOkay();
       void CommandFailed();
-      void txData(const QByteArray &packet);
+      void txData(const Bytes &packet);
       void scheduleTimeout(int milliseconds);
       void stopTimer();
       void resetSerialPort();

@@ -45,7 +45,7 @@ void CommandSequence::CommandFailed(){
      downloadFailed();
 }
 
-void CommandSequence::txData(const QByteArray &packet){
+void CommandSequence::txData(const Bytes &packet){
    if( _serialPort->isOpen()){
     _serialPort->txData(packet);
    }

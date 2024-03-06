@@ -4,6 +4,7 @@
 #include <QFile>
 
 #include <softwareimage.h>
+#include <crcs/Crc32.hpp>
 
 
 SoftwareImage::SoftwareImage(uint32_t pageSize):
@@ -22,12 +23,14 @@ bool SoftwareImage::openFile(const QString &filename){
   QFile file(filename);
   if( !file.exists()){
     _failureReason = "File does not exist";
-    _data = QByteArray();
+    _data = {};
     return false;
   }
 
   if( file.open(QIODevice::ReadOnly)){
-    _data = file.readAll();
+    auto temp = file.readAll();
+    _data = {};
+    _data.insert(_data.end(), temp.begin(), temp.end());
     file.close();
   }
 
@@ -47,10 +50,10 @@ bool SoftwareImage::openFile(const QString &filename){
  * @param length the requested length
  * @return a byte array contianing the request data. may contain less then the requested d
  */
-QByteArray SoftwareImage::getDataSegment(uint32_t address, uint32_t length){
+Bytes SoftwareImage::getDataSegment(uint32_t address, uint32_t length){
   auto imageSize = getImageSize();
   if( address > imageSize ){
-    return QByteArray();
+    return Bytes();
   }
 
   // adjust for image overruns
@@ -63,7 +66,7 @@ QByteArray SoftwareImage::getDataSegment(uint32_t address, uint32_t length){
     uint32_t endOfPage = ((address+length)/_pageSize)*_pageSize;
     length = endOfPage - address;
   }
-  return _data.mid(static_cast<int>(address), static_cast<int>(length));
+  return Bytes(_data.begin() + address, _data.begin() + address+length);
 }
 
 
@@ -73,6 +76,19 @@ QString SoftwareImage::getFailureReason(){
 
 uint32_t SoftwareImage::getImageSize(){
   return static_cast<uint32_t>(_data.size());
+}
+
+uint32_t SoftwareImage::getCrc(uint32_t size) {
+  auto crc = Crcs::Crc<uint32_t, 0x4C11DB7U, 16U, 0xFFFFFFFFU, 0x00000000U >();
+  auto imageSize = size/4;
+  for( int i=0; i < imageSize; i++){
+    uint32_t dword = _data[i*4] <<24 |
+                     _data[i*4+1] << 16 |
+                     _data[i*4+2] << 8 |
+                     _data[i*4+3];
+    crc.write32(dword);
+  }
+  return crc.getCrc();
 }
 
 

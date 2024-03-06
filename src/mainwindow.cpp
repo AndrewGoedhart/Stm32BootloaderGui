@@ -17,7 +17,7 @@ template <typename FN1, typename FN2> void MainWindow::download(QLineEdit *srcFi
           _softwareCmds->reset();
           preSequence(_softwareCmds);
           createDownloadSequence(_softwareCmds, &image, flashStart);
-          postSequence(_softwareCmds);
+          postSequence(_softwareCmds, image);
           _softwareCmds->start();
       }
   } else {
@@ -86,6 +86,7 @@ void MainWindow::createDownloadSequence(CommandSequence *seq, SoftwareImage *ima
 }
 
 
+
 void MainWindow::downloadFailed(){
     ui->logView->logLine(" ## "+_actionLabel+" Failed ##");
     enableButtons(true);
@@ -144,12 +145,13 @@ void MainWindow::on_tbLoadDc_clicked()
     loadFile("Load software DC binary", ui->leDcFile);
 }
 
-// @brief download the selected boot loader.
+// @brief download the selected bootloader.
 void MainWindow::on_btnBootloader_clicked()
 {
     download(ui->leBootFile, FlashBootStart,
-                [](auto &seq){  seq->addCommand(Command::resetIntoChipBootLoader(seq));},
-                [](auto &seq){});
+                [](auto &seq){  seq->addCommand(Command::resetIntoChipBootLoader(seq));
+                },
+                [](auto &seq, auto &image){});
 }
 
 void MainWindow::on_btnDC_clicked()
@@ -160,7 +162,7 @@ void MainWindow::on_btnDC_clicked()
                     seq->addCommand(Command::syncBaud());
                     seq->addCommand(Command::bootloadSlave(seq));
                 },
-                [](auto &seq){});
+                [](auto &seq, auto &image){});
 }
 
 void MainWindow::on_btnApp_clicked()
@@ -169,8 +171,9 @@ void MainWindow::on_btnApp_clicked()
                 [](auto &seq){
                   seq->addCommand(Command::resetIntoCustomBootLoader(seq));
                 },
-                [](auto &seq){
+                [](auto &seq, auto &image){
                    seq->addCommand(Command::programCrc());
+                   seq->addCommand(Command::verifyCrc(FlashAppStart, image.getImageSize(), image.getCrc(image.getImageSize()) ));
                 });
 }
 

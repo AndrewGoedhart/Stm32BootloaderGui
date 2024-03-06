@@ -48,7 +48,14 @@ else()
     include/commands/commandstep.h
     include/commands/commandSequence.h
     include/commands/RxPacket.h
-      )
+    include/crcs/Crc.hpp
+    include/crcs/Crc8.hpp
+    include/crcs/Crc16.hpp
+    include/crcs/Crc32.hpp
+    include/typeConversion/Bits.hpp
+    include/typeConversion/ConvertTypes.hpp
+    include/typeConversion/Endian.hpp
+  )
 endif()
 
 target_include_directories(BootloaderGui PUBLIC

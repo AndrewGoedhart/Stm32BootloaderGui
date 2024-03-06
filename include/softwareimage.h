@@ -1,10 +1,11 @@
 #ifndef SOFTWARE_DOWNLOAD_SOFTWARE_IMAGE_H
 #define SOFTWARE_DOWNLOAD_SOFTWARE_IMAGE_H
 
-#include <QByteArray>
+#include <vector>
 #include <QObject>
 #include <QString>
 
+using Bytes = std::vector<uint8_t>;
 class SoftwareImage {
   public:
     /**
@@ -25,7 +26,7 @@ class SoftwareImage {
      * @param length the requested length
      * @return a byte array contianing the request data. may contain less then the requested d
      */
-    QByteArray getDataSegment(uint32_t address, uint32_t length);
+   Bytes getDataSegment(uint32_t address, uint32_t length);
 
     /**
      * Get the reason for failure. if open returns false;
@@ -34,9 +35,11 @@ class SoftwareImage {
 
     uint32_t getImageSize();
 
+    uint32_t getCrc(uint32_t size);
+
   private:
     uint32_t      _pageSize;
-    QByteArray    _data;
+    Bytes         _data;
     QString       _failureReason;
 
 
