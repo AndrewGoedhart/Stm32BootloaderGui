@@ -56,7 +56,7 @@ void LogView::updateWithTimestamp(QStringList &lines){
 QStringList LogView::splitOnNewLine(QString text) {
   QStringList newLines;
   if (text.contains('\n')) {
-    newLines = text.split("\n", QString::SplitBehavior::SkipEmptyParts,
+    newLines = text.split("\n", Qt::SkipEmptyParts,
                           Qt::CaseSensitivity::CaseSensitive);
     if (text.right(1) == "\n") {
       newLines.append("");

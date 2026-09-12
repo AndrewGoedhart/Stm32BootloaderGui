@@ -3,7 +3,7 @@
 SerialSource::SerialSource(QObject *parent) :
   QObject(parent),
   _serialPort(nullptr),
-  _txQueue(std::make_unique< QQueue<QByteArray > >()),
+  _txQueue(std::make_unique< std::queue<Bytes > >()),
   _isTransmitting(false),
   _retry(new QTimer(this))
 {
@@ -12,7 +12,7 @@ SerialSource::SerialSource(QObject *parent) :
   connect(_serialPort, &QSerialPort::bytesWritten, this, &SerialSource::bytesWritten);
   connect(_serialPort, &QSerialPort::errorOccurred, this, &SerialSource::errorOccured);
   connect(_retry, &QTimer::timeout, this, &SerialSource::poll);
-  _retry->start(200);
+  _retry->start(50);
 }
 
 
@@ -43,8 +43,10 @@ void SerialSource::rts(bool isEnabled){
   _serialPort->setRequestToSend(isEnabled);
 }
 
-void SerialSource::txData(const QByteArray &data){
-  _txQueue->enqueue(data);
+void SerialSource::txData(const Bytes &data){
+  auto txPacket = std::vector<uint8_t>();
+  txPacket.insert(txPacket.begin(), data.begin(), data.end());
+  _txQueue->push(txPacket);
   sendIfTxComplete();
 }
 
@@ -60,7 +62,7 @@ void SerialSource::openPort(const QString &portName, int baudRate ){
   _serialPort->setFlowControl(QSerialPort::NoFlowControl);
   _serialPort->setStopBits(QSerialPort::OneStop);
   if( _serialPort->open(QIODevice::ReadWrite) ){
-     dtr(false);
+     dtr(true);
      rts(false);
     emit opened();
   } else {
@@ -93,7 +95,6 @@ void SerialSource::poll(){
 
 void SerialSource::readyRead(){
   if( _serialPort->bytesAvailable()){
-    _serialPort->setDataTerminalReady(true);
     auto data = _serialPort->readAll();
     emit rxData(data);
   }
@@ -105,7 +106,12 @@ void SerialSource::readyRead(){
  * @param error
  */
 void SerialSource::errorOccured(QSerialPort::SerialPortError){
-  closePort();
+  if( _serialPort->isOpen()) {
+    auto baud = getBaudRate();
+    auto port = getPort();
+    closePort();
+    openPort(port, baud);
+  }
 }
 
 /**
@@ -114,8 +120,8 @@ void SerialSource::errorOccured(QSerialPort::SerialPortError){
  */
 void SerialSource::clearQueues(){
   if( _serialPort->isOpen()){
-    while(!_txQueue->isEmpty()){
-      (void)_txQueue->dequeue();
+    while(!_txQueue->empty()){
+      (void)_txQueue->pop();
     }
     while(_serialPort->bytesAvailable()){
       _serialPort->readAll();
@@ -125,8 +131,10 @@ void SerialSource::clearQueues(){
 
 void SerialSource::sendIfTxComplete(){
   if( (_txQueue->size() > 0 ) && (_serialPort->bytesToWrite() == 0 )){
-    auto data = _txQueue->dequeue();
-    _serialPort->write(data);
+    auto data = _txQueue->front();
+    _txQueue->pop();
+    auto txData = QByteArray(reinterpret_cast<const char *>(data.data()), data.size());
+    _serialPort->write(txData);
   }
 }
 

@@ -4,9 +4,13 @@
 #include <QString>
 #include <cstdint>
 #include <memory>
-
+#include <queue>
 
 class Command;
+
+using Bytes = std::vector<uint8_t>;
+using RxStream = std::queue<uint8_t>;
+
 
 class CommandStep {
   public:
@@ -21,7 +25,7 @@ class CommandStep {
     virtual ~CommandStep()=default;
 
     virtual void execute()=0;
-    virtual void rxData(const QByteArray &data)=0;
+    virtual void rxData(RxStream &data)=0;
     virtual void timerExpired()=0;
 
     void setCommand(Command *owner);
@@ -47,14 +51,14 @@ class CommandStep {
      * @param data the data in the packet
      * @return a step that sends a fixed length packet with check byte at the end and waits for an ACK
      */
-    static StepPtr txFixedData(const QByteArray &data);
+    static StepPtr txFixedData(const Bytes &data);
 
     /**
      * @brief txVariableData transmit a packet with variable length to the boot loader.
      * @param data the data in the packet minus the length byte at the front
      * @return a step that sends a variable lenght packet with check byte at the end and waits for an ACK.
      */
-    static StepPtr txVariableData(const QByteArray &data);
+    static StepPtr txVariableData(const Bytes &data);
 
     /**
      * Execute step and then wait for a given number of millliseconds before finishing
@@ -67,12 +71,21 @@ class CommandStep {
      * @param data the data in the packet minus the length byte at the front
      * @return a step that sends a variable lenght packet with check byte at the end and waits for an ACK.
      */
-    static StepPtr verifyData(const QByteArray &data);
+    static StepPtr verifyData(const Bytes &data);
+
+
+    /**
+     * Receive a CRC and verify it is correct.
+     * @param crc the crc expected to be returned from the device.
+     * @return a step that checks that a 32 bit value recieved from the device matches the one expected.
+     */
+    static StepPtr rxCrc(uint32_t expectedCrc);
+
 
     /**
      * helper function to create a QbyteArray from a byte list.
      */
-    static QByteArray createArray(std::initializer_list<uint8_t>);
+    static Bytes createArray(std::initializer_list<uint8_t>);
 
 
     /**
@@ -80,7 +93,7 @@ class CommandStep {
      * @param data the data for the packet
      * @return the data with an XOR checksum appended onto the end.
      */
-    static QByteArray appendCheckSum(const QByteArray &data);
+    static Bytes appendCheckSum(const Bytes &data);
 
 protected:
     Command *_owner;
@@ -105,7 +118,7 @@ public:
   void execute() override{
       _execute(cmd());
   }
-  void rxData(const QByteArray &data) override{
+  void rxData(RxStream &data) override{
     _rxData(cmd(), data);
   };
 
@@ -115,23 +128,25 @@ public:
 };
 
 
+using Bytes = std::vector<uint8_t>;
+
 class RxVerifyData :public CommandStep {
-  QByteArray _expected;
+  Bytes _expected;
   int  _rxIndex;
 
 public:
-  RxVerifyData(QByteArray expected):
+  RxVerifyData(const Bytes &expected):
       CommandStep(),
       _expected(),
       _rxIndex(0){
-   _expected.append(ACK);
-   _expected.append(expected);
+   _expected.push_back(ACK);
+   _expected.insert(_expected.end(), expected.begin(), expected.end());
   }
 
   ~RxVerifyData() override = default;
 
   void execute() override;
-  void rxData(const QByteArray &data) override;
+  void rxData(RxStream &data) override;
   void timerExpired() override{}
 
 };
@@ -145,7 +160,7 @@ CommandStep::StepPtr CommandStep::timedStep(FN &exec, int milliseconds)
         exec(cmd);
         cmd->scheduleTimeout(milliseconds);
     };
-    auto rxData = [] (Command *, const QByteArray &){};
+    auto rxData = [] (Command *, RxStream &){};
     auto timerExpired = [] (Command *cmd){
         cmd->stepComplete();
     };

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(BootloaderGui LANGUAGES CXX)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -11,24 +10,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
-# QtCreator supports the following variables for Android, which are identical to qmake Android variables.
-# Check http://doc.qt.io/qt-5/deployment-android.html for more information.
-# They need to be set before the find_package(Qt5 ...) call.
-
-#if(ANDROID)
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-#    if (ANDROID_ABI STREQUAL "armeabi-v7a")
-#        set(ANDROID_EXTRA_LIBS
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libcrypto.so
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
-#    endif()
-#endif()
-
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS SerialPort REQUIRED)
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS SerialPort REQUIRED)
+find_package(Qt6 COMPONENTS Core REQUIRED)
+find_package(Qt6 COMPONENTS Gui REQUIRED)
 
 
 if(ANDROID)
@@ -62,7 +47,14 @@ else()
     include/commands/commandstep.h
     include/commands/commandSequence.h
     include/commands/RxPacket.h
-      )
+    include/crcs/Crc.hpp
+    include/crcs/Crc8.hpp
+    include/crcs/Crc16.hpp
+    include/crcs/Crc32.hpp
+    include/typeConversion/Bits.hpp
+    include/typeConversion/ConvertTypes.hpp
+    include/typeConversion/Endian.hpp
+  )
 endif()
 
 target_include_directories(BootloaderGui PUBLIC
@@ -70,7 +62,7 @@ target_include_directories(BootloaderGui PUBLIC
 
 target_link_libraries(BootloaderGui
     PRIVATE
-    Qt5::Widgets
-    Qt5::Core
-    Qt5::SerialPort
+    Qt6::Widgets
+    Qt6::Core
+    Qt6::SerialPort
  )

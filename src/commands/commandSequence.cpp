@@ -28,6 +28,7 @@ void CommandSequence::executeCurrentCmd()
 {
     if(_currentCommandIndex < _commands.size()){
         updateProgress(_commands[_currentCommandIndex]->name(), _currentCommandIndex*100/_commands.size());
+        _serialPort->clearQueues();
       _commands[_currentCommandIndex]->execute();
     } else {
       downloadComplete();
@@ -44,7 +45,7 @@ void CommandSequence::CommandFailed(){
      downloadFailed();
 }
 
-void CommandSequence::txData(const QByteArray &packet){
+void CommandSequence::txData(const Bytes &packet){
    if( _serialPort->isOpen()){
     _serialPort->txData(packet);
    }
@@ -62,11 +63,15 @@ void CommandSequence::stopTimer(){
 }
 
 void CommandSequence::timerExpired(){
-   _commands[_currentCommandIndex]->timerExpired();
+  if( _currentCommandIndex < _commands.size()) {
+    _commands[_currentCommandIndex]->timerExpired();
+  }
 }
 
 void CommandSequence::rxData(const QByteArray &data){
+  if( _currentCommandIndex < _commands.size()) {
     _commands[_currentCommandIndex]->rxData(data);
+  }
 
 }
 
@@ -75,4 +80,15 @@ void CommandSequence::dtr(bool isEnabled){
 }
 void CommandSequence::rts(bool isEnabled){
     _serialPort->rts(isEnabled);
+}
+
+void CommandSequence::clearQueues() {
+  _serialPort->clearQueues();
+}
+
+void CommandSequence::resetSerialPort() {
+  auto port = _serialPort->getPort();
+  auto baud = _serialPort->getBaudRate();
+  _serialPort->closePort();
+  _serialPort->openPort(port, baud);
 }
