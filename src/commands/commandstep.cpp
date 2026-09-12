@@ -114,7 +114,6 @@ CommandStep::StepPtr CommandStep::rxCrc(uint32_t expectedCrc) {
     cmd->scheduleTimeout(10000);
   };
 
-
   auto rxData = [expectedCrc](Command *cmd, RxStream &data) {
     if (data.size() >= 6) {
       auto ack = getNext(data);
@@ -167,6 +166,7 @@ void RxVerifyData::execute() {
 
 }
 
+__attribute__((optimize("Og")))
 void RxVerifyData::rxData(RxStream &data) {
   if (data.size() >= _expected.size()) {
     for (auto e: _expected) {

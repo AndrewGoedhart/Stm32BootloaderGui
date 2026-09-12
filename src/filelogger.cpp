@@ -29,7 +29,7 @@ bool FileLogger::isLogging()
 void FileLogger::logLine(QString line)
 {
   if( isLogging()){
-    *_outputStream << line<< endl;
+    *_outputStream << line<< Qt::endl;
   }
 }
 

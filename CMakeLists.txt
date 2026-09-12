@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(BootloaderGui LANGUAGES CXX)
-set(CMAKE_PREFIX_PATH "/home/andrew/Qt/5.12.12/gcc_64/lib/cmake")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOUIC ON)
@@ -11,10 +10,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt5 COMPONENTS SerialPort REQUIRED)
-find_package(Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt5 COMPONENTS Gui REQUIRED)
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS SerialPort REQUIRED)
+find_package(Qt6 COMPONENTS Core REQUIRED)
+find_package(Qt6 COMPONENTS Gui REQUIRED)
 
 
 if(ANDROID)
@@ -63,7 +62,7 @@ target_include_directories(BootloaderGui PUBLIC
 
 target_link_libraries(BootloaderGui
     PRIVATE
-    Qt5::Widgets
-    Qt5::Core
-    Qt5::SerialPort
+    Qt6::Widgets
+    Qt6::Core
+    Qt6::SerialPort
  )
